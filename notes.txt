@@ -1,0 +1,19 @@
+npm init -y
+npm i --save ws uuid
+
+
+modules needed
+http
+{ WebSocketServer }
+
+
+steps
+-create http server
+-setup connection
+
+
+
+
+client side
+
+$ npm i react-use-websocket lodash.throttle perfect-cursors

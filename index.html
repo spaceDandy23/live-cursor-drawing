@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    
+</head>
+<body>
+    <canvas id="drawingBoard" width="800" height="600" style="border:1px solid black;"></canvas>
+
+
+
+    <style>
+        canvas {
+            cursor: crosshair;
+        }
+    </style>
+
+
+    <script>
+        const canvas = document.getElementById('drawingBoard');
+        const ctx = canvas.getContext('2d');
+
+        let isDrawing = false;
+
+        ctx.strokeStyle = "red";
+
+        canvas.onmousedown = (e) => {
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        }
+
+        canvas.onmousemove = (e) => {
+            if(isDrawing){
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            }
+        }
+        canvas.onmouseup = () => {
+            isDrawing = false;
+        }
+
+        canvas.onmouseleave = () => {
+            isDrawing = false; 
+        };
+
+
+    </script>
+</body>
+</html>
