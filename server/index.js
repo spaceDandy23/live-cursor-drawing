@@ -22,13 +22,20 @@ const broadcast = () => {
 
 const handleMessage = (bytes, uuid) => {
     const message = JSON.parse(bytes.toString());
-    users[uuid]["state"]["mousemove"] = message;
+
+
+    users[uuid]["state"]["mousemove"] = message["mousemove"];
+    console.log(message);
+
     broadcast();
+
+
 }
 const handleClose = (uuid) => {
 
     console.log(`user: ${users[uuid]["username"]} left`);
     // users[uuid]["state"]["active"] = false;
+
     delete connections[uuid];
     delete users[uuid];
     broadcast();
@@ -46,11 +53,18 @@ wsServer.on("connection", (connection, request) => {
     users[id] = {
         username: username,
         state: {
-            mousemove:{
+            mousemove: {
                 x: 0,
                 y: 0,
             },
-            active: true
+            line_to: {
+                x: 0,
+                y: 0
+            },
+            move_to: {
+                x: 0,
+                y: 0
+            }
         }
 
     }
