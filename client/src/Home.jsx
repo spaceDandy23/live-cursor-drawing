@@ -8,6 +8,21 @@ import { Cursor } from './components/Cursor';
 export function Home({username}) {
 
 
+
+    const canvasRef = useRef(null);
+
+    const handleMouseMove = (e) => {
+
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        const rect = canvas.getBoundingClientRect();
+        
+
+
+
+        
+    }
+
     const renderCursors = users => {
         return Object.keys(users).filter(uuid => 
             users[uuid].username !== username
@@ -22,28 +37,50 @@ export function Home({username}) {
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
-    
+
 
     const sendThrottleJSONMessage = useRef(throttle(sendJsonMessage, 50));
 
     useEffect(() => {
+
+        sendJsonMessage({
+            x: 0,
+            y: 0,
+        });
+
+
+
+
+
+
         window.addEventListener("mousemove", e => {
             sendThrottleJSONMessage.current({x: e.clientX, y: e.clientY})
-        })
+        });
+
+        
 
 
     }, []);
 
-    if (lastJsonMessage){
-
-        return <>
+    return (
+    <>
+        {lastJsonMessage && (
+        <>
             {JSON.stringify(lastJsonMessage)}
             <h1>Home</h1>
             <p>Welcome {username}</p>
-            {
-                
-                renderCursors(lastJsonMessage)
-            }
+            {renderCursors(lastJsonMessage)}
         </>
-    }
+        )}
+
+        <canvas
+        ref={canvasRef}
+        height={480}
+        width={480}
+        
+        style={{ border: '1px solid black', cursor: 'crosshair' }}
+        onMouseMove={handleMouseMove}
+        />
+    </>
+    );
 }

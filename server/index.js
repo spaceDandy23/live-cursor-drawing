@@ -27,10 +27,11 @@ const handleMessage = (bytes, uuid) => {
 }
 const handleClose = (uuid) => {
 
-    console.log(`user: ${users[uuid]["username"]} left nigga`);
-    users[uuid]["state"]["active"] = false;
+    console.log(`user: ${users[uuid]["username"]} left`);
+    // users[uuid]["state"]["active"] = false;
     delete connections[uuid];
-    
+    delete users[uuid];
+    broadcast();
 }
 
 
@@ -53,7 +54,7 @@ wsServer.on("connection", (connection, request) => {
         }
 
     }
-
+    broadcast();
     connection.on("message", message => handleMessage(message, id));
     connection.on("close", () => handleClose(id));
 

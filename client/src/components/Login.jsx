@@ -9,11 +9,6 @@ export const Login = ({onSubmit}) => {
         e.preventDefault();
         onSubmit(username);
 
-        try{
-            console.log("bali");
-        }catch(e){
-            console.error(e);
-        }
 
     }
 
@@ -22,8 +17,8 @@ export const Login = ({onSubmit}) => {
             <h1>Welcome</h1>
             <p>what should people call you</p>
             <form onSubmit={handleSubmit}>
-                <label htmlFor="html">
-                    Title
+                <label htmlFor="username">
+                    Username
                 </label>
                 <input 
                 placeholder="username"
