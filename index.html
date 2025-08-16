@@ -34,6 +34,7 @@
 
         canvas.onmousemove = (e) => {
             if(isDrawing){
+
                 ctx.lineTo(e.offsetX, e.offsetY);
                 ctx.stroke();
             }

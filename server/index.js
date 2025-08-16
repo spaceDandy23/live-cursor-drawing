@@ -23,10 +23,8 @@ const broadcast = () => {
 const handleMessage = (bytes, uuid) => {
     const message = JSON.parse(bytes.toString());
 
-
-    users[uuid]["state"]["mousemove"] = message["mousemove"];
+    users[uuid]["state"] = message["state"];
     console.log(message);
-
     broadcast();
 
 
@@ -57,14 +55,6 @@ wsServer.on("connection", (connection, request) => {
                 x: 0,
                 y: 0,
             },
-            line_to: {
-                x: 0,
-                y: 0
-            },
-            move_to: {
-                x: 0,
-                y: 0
-            }
         }
 
     }
