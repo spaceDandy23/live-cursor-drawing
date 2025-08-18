@@ -21,13 +21,31 @@ export function Home({username}) {
     const moveToRef = useRef({});
 
 
+
     const renderCursors = users => {
- 
+    
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+
         return Object.keys(users).filter(uuid => 
-            users[uuid].username === username
+            users[uuid].username !== username
         ).map(uuid => {
+
+
             const user = users[uuid];
-            return <Cursor key={uuid} point={[user.state.mousemove.x, user.state.mousemove.y]}/>
+            const { x, y } = user.state.mousemove;
+            let coorX = x;
+            let coorY = y;
+
+            if(!user.state.fromWindow){
+                coorX += rect.left;
+                coorY += rect.top;
+            }
+
+
+            return <Cursor key={uuid} point={[coorX , coorY]} />;
         })
     }
 
@@ -36,7 +54,7 @@ export function Home({username}) {
         const ctx = canvas.getContext("2d");  
 
         Object.keys(users)
-        .filter(uuid => users[uuid].username === username)
+        .filter(uuid => users[uuid].username !== username)
         .forEach(uuid => {
 
             let {drawing} = users[uuid].state;
@@ -76,8 +94,6 @@ export function Home({username}) {
 
         
 
-
-
     }
 
 
@@ -106,36 +122,34 @@ export function Home({username}) {
 
 
     const sendThrottleJSONMessage = useRef(throttle(sendJsonMessage, 50));
-    const sendCurrAndBufferThrottleMessage = useRef(throttle(sendCurrAndBuffer, 50));
+    const sendCurrAndBufferThrottleMessage = useRef(throttle(sendCurrAndBuffer, 100));
 
 
 
 
     useEffect(() => {
 
+        
+
         const canvas = canvasRef.current;
+        
         const ctx = canvas.getContext("2d");    
         const rect = canvas.getBoundingClientRect(); //use this soon bruv
             
         const handleMouseMove = (e) => {
             if(drawRef.current){
-                // ctx.lineTo(e.offsetX, e.offsetY);
-                // ctx.stroke();
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
 
                 pointerBufferRef.current.push({x: e.offsetX, y: e.offsetY});
 
                 sendCurrAndBufferThrottleMessage.current({x: e.offsetX, y: e.offsetY});
             }      
         }
-
-        if (lastJsonMessage) {
-            renderDrawing(lastJsonMessage);
-        }
-
         const handleMouseDown = (e) => {
             drawRef.current = true;
-            // ctx.beginPath();
-            // ctx.moveTo(e.offsetX, e.offsetY);
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
 
 
             sendJsonMessage({
@@ -185,7 +199,11 @@ export function Home({username}) {
         // }
 
         const handleWindowMouseMove = (e) => {
-            // sendThrottleJSONMessage.current({state: {mousemove: {x: e.clientX, y: e.clientY}}})
+            if(!drawRef.current){
+                console.log("lebron james", drawRef.current);
+                sendThrottleJSONMessage.current({state: {mousemove: {x: e.clientX, y: e.clientY}, fromWindow: true}})
+            }
+
         }
 
         
@@ -212,7 +230,14 @@ export function Home({username}) {
         }
 
 
-    }, [lastJsonMessage]);
+    }, []);
+
+
+    useEffect(() => {
+        if (lastJsonMessage) {
+            renderDrawing(lastJsonMessage);
+        }
+    }, [lastJsonMessage])
 
     return (
     <>
@@ -227,8 +252,8 @@ export function Home({username}) {
 
         <canvas
         ref={canvasRef}
-        height={1080}
-        width={1080}
+        height={480}
+        width={480}
         style={{ border: '1px solid black', cursor: 'crosshair' }}
         />
     </>
