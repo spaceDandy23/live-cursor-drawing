@@ -14,12 +14,11 @@ export function Home({username}) {
 
 
     const canvasRef = useRef(null);
-    
+    const canvasRef2 = useRef(null);
     const strokeStatusRef = useRef({});
     const drawRef = useRef(false);
     const pointerBufferRef = useRef([]);
     const moveToRef = useRef({});
-
 
 
     const renderCursors = users => {
@@ -50,7 +49,7 @@ export function Home({username}) {
     }
 
     const renderDrawing = users => {
-        const canvas = canvasRef.current;
+        const canvas = canvasRef2.current;
         const ctx = canvas.getContext("2d");  
 
         Object.keys(users)
@@ -77,10 +76,8 @@ export function Home({username}) {
                     lineTo.forEach(({x,y}) => {
                         ctx.lineTo(x, y);
                         ctx.stroke();
-                    })
-          
-                    
-                    
+                    });
+    
                 }
                 
                 }
@@ -134,7 +131,7 @@ export function Home({username}) {
         const canvas = canvasRef.current;
         
         const ctx = canvas.getContext("2d");    
-        const rect = canvas.getBoundingClientRect(); //use this soon bruv
+
             
         const handleMouseMove = (e) => {
             if(drawRef.current){
@@ -200,7 +197,6 @@ export function Home({username}) {
 
         const handleWindowMouseMove = (e) => {
             if(!drawRef.current){
-                console.log("lebron james", drawRef.current);
                 sendThrottleJSONMessage.current({state: {mousemove: {x: e.clientX, y: e.clientY}, fromWindow: true}})
             }
 
@@ -251,10 +247,16 @@ export function Home({username}) {
         )}
 
         <canvas
+        ref={canvasRef2}
+        height={480}
+        width={480}
+        style={{ position: 'absolute', border: '1px solid black', cursor: 'crosshair', zIndex: 1 }}
+        />
+        <canvas
         ref={canvasRef}
         height={480}
         width={480}
-        style={{ border: '1px solid black', cursor: 'crosshair' }}
+        style={{ position: 'absolute', border: '1px solid black', cursor: 'crosshair', zIndex: 2 }}
         />
     </>
     );
