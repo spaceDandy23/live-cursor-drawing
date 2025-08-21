@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview --port $PORT",
+    "lint": "eslint ."
   },
   "dependencies": {
     "dotenv": "^17.2.1",
