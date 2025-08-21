@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "start": "serve -s dist -l $PORT"
+    "start": "HOST=0.0.0.0 serve -s dist -l $PORT"
   },
   "dependencies": {
     "dotenv": "^17.2.1",
