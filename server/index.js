@@ -2,10 +2,11 @@ import http from 'http';
 import { WebSocketServer } from 'ws';
 import url from 'url';
 import { v4 as uuidv4 } from 'uuid';
+import 'dotenv/config';
 
 const server = http.createServer();
 const wsServer = new WebSocketServer({server});
-const port = 8000;
+const port = process.env.PORT || 8000;
 
 const connections = {};
 const users = {};
@@ -45,7 +46,7 @@ const handleClose = (uuid) => {
 wsServer.on("connection", (connection, request) => {
    const { username } = url.parse(request.url, true).query;
    const id = uuidv4();
-   console.log(`Hello my nigga ${username} ur uuid is ${id}`);
+   console.log(`Hello ${username} ur uuid is ${id}`);
 
     connections[id] = connection;
     users[id] = {
