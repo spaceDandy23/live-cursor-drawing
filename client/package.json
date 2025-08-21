@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "start": "cross-env PORT=$PORT serve -s dist -l $PORT -n 0.0.0.0"
+    "start": "serve -s dist -l $PORT -n 0.0.0.0"
   },
   "dependencies": {
     "dotenv": "^17.2.1",
