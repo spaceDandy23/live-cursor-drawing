@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "serve -s dist"
+    "start": "serve -s dist -l $PORT"
   },
   "dependencies": {
     "dotenv": "^17.2.1",
