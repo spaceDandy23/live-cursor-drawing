@@ -96,7 +96,7 @@ export function Home({username}) {
 
 
 
-    const WS_URL = 'wss://live-cursor-drawing-production.up.railway.app';
+    const WS_URL = import.meta.env.VITE_WS_URL;
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
