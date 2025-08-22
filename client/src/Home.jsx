@@ -12,14 +12,12 @@ export function Home({username}) {
     // const colors = ["red", "yellow"];
     // const colorChange = useRef(0);
 
-
+    const canvasesRef = useRef({});
     const canvasRef = useRef(null);
-    const canvasRef2 = useRef(null);
     const strokeStatusRef = useRef({});
     const drawRef = useRef(false);
     const pointerBufferRef = useRef([]);
     const moveToRef = useRef({});
-
 
     const renderCursors = users => {
     
@@ -48,14 +46,16 @@ export function Home({username}) {
         })
     }
 
+
     const renderDrawing = users => {
-        const canvas = canvasRef2.current;
-        const ctx = canvas.getContext("2d");  
+
+
 
         Object.keys(users)
         .filter(uuid => users[uuid].username !== username)
         .forEach(uuid => {
-
+            const canvas = canvasesRef.current[uuid];
+            const ctx = canvas.getContext("2d");  
             let {drawing} = users[uuid].state;
             if(drawing){
                 let moveTo = users[uuid].state.move_to;
@@ -92,6 +92,7 @@ export function Home({username}) {
         
 
     }
+
 
 
 
@@ -235,29 +236,45 @@ export function Home({username}) {
         }
     }, [lastJsonMessage])
 
+
+
     return (
     <>
+        <h1>Home</h1>
+        <p>Welcome {username}</p>
         {lastJsonMessage && (
         <>
             {/* {JSON.stringify(lastJsonMessage)} */}
-            <h1>Home</h1>
-            <p>Welcome {username}</p>
             {renderCursors(lastJsonMessage)}
         </>
         )}
 
         <canvas
-        ref={canvasRef2}
+        ref={canvasRef}
         height={480}
         width={480}
         style={{ position: 'absolute', border: '1px solid black', cursor: 'crosshair', zIndex: 1 }}
         />
-        <canvas
-        ref={canvasRef}
-        height={480}
-        width={480}
-        style={{ position: 'absolute', border: '1px solid black', cursor: 'crosshair', zIndex: 2 }}
-        />
+        {lastJsonMessage && Object.keys(lastJsonMessage)
+        .filter(uuid => users[uuid].username !== username) 
+        .map(uuid => (
+            <canvas
+            key={uuid}
+            ref={el => {
+                if (el) canvasesRef.current[uuid] = el;
+                else delete canvasesRef.current[uuid]; 
+            }}
+            height={480}
+            width={480}
+            style={{
+                position: 'absolute',
+                border: '1px solid black',
+                cursor: 'crosshair',
+                zIndex: -1
+            }}
+            />
+        ))}
+
     </>
     );
 }
