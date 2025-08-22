@@ -18,7 +18,7 @@ export function Home({username}) {
     const drawRef = useRef(false);
     const pointerBufferRef = useRef([]);
     const moveToRef = useRef({});
-    const batchSigRef = useRef({});
+    const lastLineToRef = useRef({});
 
     const renderCursors = users => {
     
@@ -72,21 +72,19 @@ export function Home({username}) {
                     ctx.moveTo(moveToRef.current[uuid].x, moveToRef.current[uuid].y);
                     strokeStatusRef.current[uuid] = true;
                 }
-                else{
                     // colorChange.current === 1 ? colorChange.current = 0 : colorChange.current += 1;
                     // ctx.strokeStyle = colors[colorChange.current];
-                    lineTo.forEach(({x,y}) => {
-                        ctx.lineTo(x, y);
-  
-                    });
-
-
-                    ctx.stroke();
-                    moveToRef.current[uuid] = lineTo[lineTo.length-1];
-
-                    users[uuid].state.line_to = [];
-    
+                if (lineTo && lineTo.length > 0) {
+                    const alreadySeen = lastLineToRef.current[uuid] === lineTo;
+                    if (!alreadySeen) {
+                        lineTo.forEach(({x,y}) => ctx.lineTo(x, y));
+                        ctx.stroke();
+                        moveToRef.current[uuid] = lineTo[lineTo.length-1];
+                        lastLineToRef.current[uuid] = lineTo;
+                    }
                 }
+                        
+                
                 
                 }
                 else{
