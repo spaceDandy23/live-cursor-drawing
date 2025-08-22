@@ -18,6 +18,7 @@ export function Home({username}) {
     const drawRef = useRef(false);
     const pointerBufferRef = useRef([]);
     const moveToRef = useRef({});
+    const batchSigRef = useRef({});
 
     const renderCursors = users => {
     
@@ -47,56 +48,48 @@ export function Home({username}) {
     }
 
 
-    const renderDrawing = users => {
-
-
-
+    const renderDrawing = (users) => {
         Object.keys(users)
         .filter(uuid => users[uuid].username !== username)
         .forEach(uuid => {
             const canvas = canvasesRef.current[uuid];
-            const ctx = canvas.getContext("2d");  
-            let {drawing} = users[uuid].state;
-            if(drawing){
-                let moveTo = users[uuid].state.move_to;
-                let lineTo = users[uuid].state.line_to;
+            if (!canvas) return;
 
-                if (moveTo) {
-                    moveToRef.current[uuid] = moveTo;
-                }
+            const ctx = canvas.getContext("2d");
+            const { drawing, move_to: moveTo, line_to: lineTo = [] } = users[uuid].state;
 
+            if (moveTo) {
+            moveToRef.current[uuid] = moveTo;
+            }
 
-                if(!strokeStatusRef.current[uuid]){ 
-                    ctx.beginPath();
-                    ctx.moveTo(moveToRef.current[uuid].x, moveToRef.current[uuid].y);
-                    strokeStatusRef.current[uuid] = true;
-                }
-                else{
-                    // colorChange.current === 1 ? colorChange.current = 0 : colorChange.current += 1;
-                    // ctx.strokeStyle = colors[colorChange.current];
-                    lineTo.forEach(({x,y}) => {
-                        ctx.lineTo(x, y);
-  
-                    });
+            if (!drawing) {
+            strokeStatusRef.current[uuid] = false;
+            return;
+            }
 
+            if (lineTo.length === 0) return;
 
-                    ctx.stroke();
-                    moveToRef.current[uuid] = lineTo[lineTo.length-1];
-    
-                }
-                
-                }
-                else{
-                    if(strokeStatusRef.current[uuid]){
-                        strokeStatusRef.current[uuid] = false;
-                    }
-                }
+            // --- Deduplication ---
+            const last = lineTo.at(-1);
+            const sig = `${lineTo.length}:${last.x},${last.y}`;
+            if (batchSigRef.current[uuid] === sig) return;
+            batchSigRef.current[uuid] = sig;
 
+            // Start stroke if needed
+            if (!strokeStatusRef.current[uuid]) {
+            const start = moveToRef.current[uuid] ?? lineTo[0];
+            ctx.beginPath();
+            ctx.moveTo(start.x, start.y);
+            strokeStatusRef.current[uuid] = true;
+            }
+
+            // Draw
+            lineTo.forEach(({ x, y }) => ctx.lineTo(x, y));
+            ctx.stroke();
+
+            moveToRef.current[uuid] = last;
         });
-
-        
-
-    }
+    };
 
 
 
