@@ -57,35 +57,40 @@ export function Home({username}) {
             const canvas = canvasesRef.current[uuid];
             const ctx = canvas.getContext("2d");  
             let {drawing} = users[uuid].state;
-            if (drawing) {
-            let moveTo = users[uuid].state.move_to;
-            let lineTo = users[uuid].state.line_to;
+            if(drawing){
+                let moveTo = users[uuid].state.move_to;
+                let lineTo = users[uuid].state.line_to;
 
-            if (moveTo) {
-                moveToRef.current[uuid] = moveTo;
-            }
-
-            if (lineTo.length > 0) {
-                if (!strokeStatusRef.current[uuid]) {
-                ctx.beginPath();
-                ctx.moveTo(moveToRef.current[uuid].x, moveToRef.current[uuid].y);
-                strokeStatusRef.current[uuid] = true;
+                if (moveTo) {
+                    moveToRef.current[uuid] = moveTo;
                 }
 
-                lineTo.forEach(({ x, y }) => {
-                ctx.lineTo(x, y);
-                });
+                
+                if(!strokeStatusRef.current[uuid]){ 
+                    ctx.beginPath();
+                    ctx.moveTo(moveToRef.current[uuid].x, moveToRef.current[uuid].y);
+                    strokeStatusRef.current[uuid] = true;
+                }
+                else{
+                    // colorChange.current === 1 ? colorChange.current = 0 : colorChange.current += 1;
+                    // ctx.strokeStyle = colors[colorChange.current];
+                    lineTo.forEach(({x,y}) => {
+                        ctx.lineTo(x, y);
+  
+                    });
 
-                ctx.stroke();
 
-                moveToRef.current[uuid] = lineTo[lineTo.length - 1];
-            }
-            } else {
-            // When user stops drawing
-            if (strokeStatusRef.current[uuid]) {
-                strokeStatusRef.current[uuid] = false;
-            }
-            }
+                    ctx.stroke();
+                    moveToRef.current[uuid] = lineTo[lineTo.length-1];
+    
+                }
+                
+                }
+                else{
+                    if(strokeStatusRef.current[uuid]){
+                        strokeStatusRef.current[uuid] = false;
+                    }
+                }
 
         });
 
@@ -97,8 +102,8 @@ export function Home({username}) {
 
 
 
-    const WS_URL = import.meta.env.VITE_WS_URL;
-    // const WS_URL = "ws://localhost:8000"
+    // const WS_URL = import.meta.env.VITE_WS_URL;
+    const WS_URL = "ws://localhost:8000"
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
