@@ -97,7 +97,8 @@ export function Home({username}) {
 
 
 
-    const WS_URL = import.meta.env.VITE_WS_URL;
+    // const WS_URL = import.meta.env.VITE_WS_URL;
+    const WS_URL = "ws://localhost:8000"
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
@@ -256,7 +257,7 @@ export function Home({username}) {
         style={{ position: 'absolute', border: '1px solid black', cursor: 'crosshair', zIndex: 1 }}
         />
         {lastJsonMessage && Object.keys(lastJsonMessage)
-        .filter(uuid => users[uuid].username !== username) 
+        .filter(uuid => lastJsonMessage[uuid].username !== username) 
         .map(uuid => (
             <canvas
             key={uuid}
