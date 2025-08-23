@@ -82,8 +82,11 @@ export function Home({username}) {
             }
 
 
-            lineTo.forEach(({ x, y }) => ctx.lineTo(x, y));
-            ctx.stroke();
+            lineTo.forEach(({ x, y }) => {
+                ctx.lineTo(x, y)
+                ctx.stroke();
+            });
+
 
             moveToRef.current[uuid] = last;
         });
@@ -93,8 +96,8 @@ export function Home({username}) {
 
 
 
-    const WS_URL = import.meta.env.VITE_WS_URL;
-    // const WS_URL = "ws://localhost:8000"
+    // const WS_URL = import.meta.env.VITE_WS_URL;
+    const WS_URL = "ws://localhost:8000"
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
