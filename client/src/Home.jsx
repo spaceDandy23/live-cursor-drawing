@@ -244,7 +244,13 @@ export function Home({username}) {
         <p>Welcome {username}</p>
         {lastJsonMessage && (
         <>
-            {/* {JSON.stringify(lastJsonMessage)} */}
+            <div style={{ height: 80, width: 480, overflowX: 'auto', gap: 10 }}>
+            {Object.keys(lastJsonMessage).map(uuid => (
+                <li key={uuid}>
+                {lastJsonMessage[uuid].username} joined
+                </li>
+            ))}
+            </div>
             {renderCursors(lastJsonMessage)}
         </>
         )}
