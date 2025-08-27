@@ -19,6 +19,8 @@ export function Home({username}) {
     const pointerBufferRef = useRef([]);
     const moveToRef = useRef({});
     const batchSigRef = useRef({});
+    const modeRef = useRef(false);
+
 
     const renderCursors = users => {
     
@@ -56,14 +58,24 @@ export function Home({username}) {
             if (!canvas) return;
 
             const ctx = canvas.getContext("2d");
-            const { drawing, move_to: moveTo, line_to: lineTo = [] } = users[uuid].state;
-
-            if (moveTo) {
-            moveToRef.current[uuid] = moveTo;
+            const { drawing, move_to: moveTo, line_to: lineTo = [], erasing, erasedStopped } = users[uuid].state;
+            if(erasing){
+                ctx.lineWidth = 10;
+                ctx.globalCompositeOperation = "destination-out";
+            }
+            if(erasedStopped){
+                ctx.lineWidth = 1;
+                ctx.globalCompositeOperation = "source-over";
             }
 
+            if (moveTo) {
+                moveToRef.current[uuid] = moveTo;
+            }
+  
+  
+
             if (!drawing) {
-            strokeStatusRef.current[uuid] = false;
+                strokeStatusRef.current[uuid] = false;
             return;
             }
 
@@ -110,7 +122,7 @@ export function Home({username}) {
             sendJsonMessage({state: {
                 mousemove: coordinates, 
                 line_to: pointerBufferRef.current,
-                drawing: true
+                drawing: true,
             }});
             pointerBufferRef.current = [];
         }
@@ -127,11 +139,14 @@ export function Home({username}) {
 
     useEffect(() => {
 
-        
+
+
 
         const canvas = canvasRef.current;
         
         const ctx = canvas.getContext("2d");    
+
+
 
             
         const handleMouseMove = (e) => {
@@ -142,10 +157,20 @@ export function Home({username}) {
                 pointerBufferRef.current.push({x: e.offsetX, y: e.offsetY});
 
                 sendCurrAndBufferThrottleMessage.current({x: e.offsetX, y: e.offsetY});
+                
             }      
         }
         const handleMouseDown = (e) => {
             drawRef.current = true;
+
+            if(!modeRef.current){
+                ctx.lineWidth = 1;
+                ctx.globalCompositeOperation = "source-over";
+            }
+            else{
+                ctx.lineWidth = 10;
+                ctx.globalCompositeOperation = "destination-out";
+            }
             ctx.beginPath();
             ctx.moveTo(e.offsetX, e.offsetY);
 
@@ -158,7 +183,8 @@ export function Home({username}) {
                     },
                     move_to: {x: e.offsetX, y: e.offsetY},
                     line_to: [],
-                    drawing: true
+                    drawing: true,
+                    erasing: modeRef.current
                 }
             })
 
@@ -167,6 +193,10 @@ export function Home({username}) {
         const handleMouseUp = (e) => {
             drawRef.current = false;
             sendCurrAndBufferThrottleMessage.current.flush();
+
+            if(!modeRef.current){
+                canvas.style.cursor = "crosshair";
+            }
             sendJsonMessage({
                 state:{
                     mousemove: {
@@ -175,6 +205,7 @@ export function Home({username}) {
                     },
                     line_to: [],
                     drawing: false,
+                    erasedStopped: true
                 },
             });
 
@@ -204,6 +235,22 @@ export function Home({username}) {
         }
 
         
+        const handleCtrlDown = (e) => {
+            if(e.ctrlKey){
+                modeRef.current = true;
+                if(!drawRef.current){
+                    canvas.style.cursor = "cell";
+                }
+            }
+        } 
+        const handleCtrlUp = (e) => {
+            if(e.key === "Control"){
+                modeRef.current = false;
+                if(!drawRef.current){
+                    canvas.style.cursor = "crosshair";
+                }
+            }  
+        } 
 
         canvas.addEventListener("mouseup", handleMouseUp);
         canvas.addEventListener("mousedown", handleMouseDown);
@@ -213,7 +260,8 @@ export function Home({username}) {
 
 
         window.addEventListener("mousemove", handleWindowMouseMove);
-
+        window.addEventListener("keydown", handleCtrlDown);
+        window.addEventListener("keyup", handleCtrlUp);
         
         return () => {
             // canvas.removeEventListener("mouseleave", handleMouseLeave);
@@ -221,7 +269,8 @@ export function Home({username}) {
             canvas.removeEventListener("mousedown", handleMouseDown);
             canvas.removeEventListener("mousemove", handleMouseMove);
             window.removeEventListener("mousemove", handleWindowMouseMove);
-
+            window.removeEventListener("keydown", handleCtrlDown);
+            window.removeEventListener("keyup", handleCtrlUp);
 
 
         }
@@ -242,6 +291,7 @@ export function Home({username}) {
     <>
         <h1>Home</h1>
         <p>Welcome {username}</p>
+        <p>Hold control to make use of the eraser</p>
         {lastJsonMessage && (
         <>
             <div style={{ height: 80, width: 480, overflowX: 'auto', gap: 10 }}>
