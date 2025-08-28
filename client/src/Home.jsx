@@ -72,8 +72,6 @@ export function Home({username}) {
                 moveToRef.current[uuid] = moveTo;
             }
   
-  
-
             if (!drawing) {
                 strokeStatusRef.current[uuid] = false;
             return;
@@ -154,13 +152,18 @@ export function Home({username}) {
                 ctx.lineTo(e.offsetX, e.offsetY);
                 ctx.stroke();
 
+ 
                 pointerBufferRef.current.push({x: e.offsetX, y: e.offsetY});
 
                 sendCurrAndBufferThrottleMessage.current({x: e.offsetX, y: e.offsetY});
                 
-            }      
+            }     
+            else if(!drawRef.current){
+                sendThrottleJSONMessage.current({state: {mousemove: {x: e.clientX, y: e.clientY}, fromWindow: true}})
+            } 
         }
         const handleMouseDown = (e) => {
+
             drawRef.current = true;
 
             if(!modeRef.current){
@@ -212,26 +215,17 @@ export function Home({username}) {
 
         }
 
-        // const handleMouseLeave = (e) => {
-        //     drawRef.current = false;
-        //     sendCurrAndBufferThrottleMessage.current.flush();
-        //     sendJsonMessage({
-        //         state:{
-        //             mousemove: {
-        //                 x: e.offsetX,
-        //                 y: e.offsetY
-        //             },
-        //             line_to: [],
-        //             drawing: false
-        //         }
-        //     })
-        // }
-
         const handleWindowMouseMove = (e) => {
-            if(!drawRef.current){
-                sendThrottleJSONMessage.current({state: {mousemove: {x: e.clientX, y: e.clientY}, fromWindow: true}})
+            const rect = canvas.getBoundingClientRect();
+            if(e.clientY <= rect.top || e.clientY >= rect.bottom || e.clientX <= rect.left || e.clientX >= rect.right){
+                console.log("outside canvas")
+                drawRef.current = false;
+                modeRef.current = false;
+                sendThrottleJSONMessage.current({state: {mousemove: {x: e.clientX, y: e.clientY}, fromWindow: true, erasedStopped: true}})
             }
 
+
+            
         }
 
         
@@ -255,19 +249,19 @@ export function Home({username}) {
         canvas.addEventListener("mouseup", handleMouseUp);
         canvas.addEventListener("mousedown", handleMouseDown);
         canvas.addEventListener("mousemove", handleMouseMove);
-        // canvas.addEventListener("mouseleave", handleMouseLeave);
+
 
 
 
         window.addEventListener("mousemove", handleWindowMouseMove);
         window.addEventListener("keydown", handleCtrlDown);
         window.addEventListener("keyup", handleCtrlUp);
-        
+
         return () => {
-            // canvas.removeEventListener("mouseleave", handleMouseLeave);
             canvas.removeEventListener("mouseup", handleMouseUp);
             canvas.removeEventListener("mousedown", handleMouseDown);
             canvas.removeEventListener("mousemove", handleMouseMove);
+            
             window.removeEventListener("mousemove", handleWindowMouseMove);
             window.removeEventListener("keydown", handleCtrlDown);
             window.removeEventListener("keyup", handleCtrlUp);
