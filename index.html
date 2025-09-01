@@ -7,6 +7,9 @@
     
 </head>
 <body>
+
+    <button onclick="undoStroke()">Undo stroke</button>
+    <button onclick="undoUndoStroke()">Undo undo stroke</button>
     <canvas id="drawingBoard" width="800" height="600" style="border:1px solid black;"></canvas>
 
 
@@ -19,12 +22,58 @@
 
 
     <script>
+
+
+
         const canvas = document.getElementById('drawingBoard');
         const ctx = canvas.getContext('2d');
 
+        let strokes = [];
+        let stroke = [];
+
         let isDrawing = false;
+        let isClicked = false;
+        let currStrokes = [];
 
         ctx.strokeStyle = "red";
+
+
+        const reDrawCanvas = () => {
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            strokes.forEach((stroke) => {
+                ctx.beginPath();
+                ctx.globalCompositeOperation = stroke.erase ? "destination-out" : "source-over";
+                ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+                stroke.points.forEach(({x,y}) => {
+                    ctx.lineTo(x,y);
+                    ctx.stroke();
+                });
+            });
+            ctx.globalCompositeOperation = "source-over";
+        }
+
+        const undoUndoStroke = () => {
+            if(currStrokes.length <= 0){
+                return
+            }
+
+            strokes.push(currStrokes.pop());
+   
+            reDrawCanvas();
+
+        }
+
+        const undoStroke = () => {
+
+            if(strokes.length <= 0){
+                return;
+            }
+            
+            currStrokes.push(strokes.pop());
+            reDrawCanvas();
+
+        }
 
         canvas.onmousedown = (e) => {
             isDrawing = true;
@@ -36,15 +85,24 @@
             if(isDrawing){
 
                 ctx.lineTo(e.offsetX, e.offsetY);
+                stroke.push({x:e.offsetX, y:e.offsetY});
                 ctx.stroke();
             }
         }
         canvas.onmouseup = () => {
             isDrawing = false;
+            strokes.push({points: stroke, erase: false});
+            stroke = [];
+            currStrokes = [];
         }
 
         canvas.onmouseleave = () => {
+            if(isDrawing){
+                strokes.push(stroke);
+                stroke = [];
+            }
             isDrawing = false; 
+
         };
 
 
