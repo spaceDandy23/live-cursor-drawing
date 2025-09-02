@@ -20,25 +20,33 @@ export function Home({username}) {
     const moveToRef = useRef({});
     const batchSigRef = useRef({});
     const modeRef = useRef(false);
+    const moveToUndoRedo = useRef({})
 
     const strokes = useRef([]);
-    const stroke = useRef([]);
+    const stroke = useRef({});
     const prevStrokes = useRef([]);
 
     const lastMousePos = useRef({});
 
     const userStrokes = useRef({});
     const userStroke = useRef({});
+    const userPrevStrokes = useRef({});
  
     const isOutsideCanvas = useRef(false);
 
-    // const WS_URL = import.meta.env.VITE_WS_URL;
-    const WS_URL = "ws://localhost:8000"
+    const WS_URL = import.meta.env.VITE_WS_URL;
+    // const WS_URL = "ws://localhost:8000"
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
 
 
+    const pushFlushUserStroke = (uuid, erasing) => {
+        if(userStroke.current[uuid].length > 0){
+            userStrokes.current[uuid].push({points: userStroke.current[uuid], erase: erasing, move_to: moveToUndoRedo.current[uuid]});
+            userStroke.current[uuid] = [];
+        }
+    }
 
 
     const renderCursors = users => {
@@ -56,7 +64,7 @@ export function Home({username}) {
 
             const user = users[uuid];
             const { x, y } = user.state.mousemove || lastMousePos.current[uuid];
-            lastMousePos.current[uuid] = {x , y};
+
             let coorX = x;
             let coorY = y;
 
@@ -64,26 +72,69 @@ export function Home({username}) {
                 coorX += rect.left;
                 coorY += rect.top;
             }
-
+            lastMousePos.current[uuid] = {coorX , coorY};
 
             return <Cursor key={uuid} point={[coorX , coorY]} />;
         })
     }
 
-    const reDrawCanvas = (uuid = false) => {
+    const reDrawCanvas = (undo, uuid = false) => {
+
+        let canvas;
+        let diffStrokes;
 
 
-        const canvas =  uuid ? canvasesRef.current[uuid] : canvasRef.current;
+        if(uuid){
+            canvas = canvasesRef.current[uuid];
+            diffStrokes = userStrokes.current[uuid];
+            if(undo){
+                if(userStrokes.current[uuid].length > 0){ 
+                    userPrevStrokes.current[uuid].push(userStrokes.current[uuid].pop());
+                    console.log(userPrevStrokes.current[uuid]);
+                    
+                }
+            }else{
+                if(userPrevStrokes.current[uuid].length > 0) {
+                    userStrokes.current[uuid].push(userPrevStrokes.current[uuid].pop());
+                    console.log(userStrokes.current[uuid]);
+                }
+
+            }
+        }
+        else{
+            canvas = canvasRef.current;
+            diffStrokes = strokes.current;
+            if(undo){
+                if(strokes.current.length > 0){
+                    prevStrokes.current.push(strokes.current.pop());
+                }
+
+            }else{
+                if(prevStrokes.current.length > 0) {
+                    strokes.current.push(prevStrokes.current.pop());
+                }
+
+            }
+
+ 
+            sendJsonMessage(
+                {state: 
+                    {
+                        undo: undo
+                    }
+                });
+
+        }
+
         if (!canvas) return;
-
         const ctx = canvas.getContext("2d");
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        strokes.current.forEach((stroke) => {
+
+        diffStrokes.forEach((stroke) => {
             ctx.beginPath();
             ctx.globalCompositeOperation = stroke.erase ? "destination-out" : "source-over";
             ctx.lineWidth = stroke.erase ? 10 : 1;
-            ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+            ctx.moveTo(stroke.move_to.x, stroke.move_to.y);
             stroke.points.forEach(({x,y}) => {
                 ctx.lineTo(x,y);
                 ctx.stroke();
@@ -93,23 +144,6 @@ export function Home({username}) {
     }
 
 
-
-    const handleDrawing = (flag) => {
-        if(flag){
-            if(strokes.current.length <= 0){
-                return;
-            }
-            prevStrokes.current.push(strokes.current.pop());
-        }else{
-            if(prevStrokes.current.length <= 0) return;
-            strokes.current.push(prevStrokes.current.pop());
-        }
-
-        reDrawCanvas();
-        sendJsonMessage({state: {
-            undo: flag
-        }});
-    }
 
 
     const renderDrawing = (users) => {
@@ -124,12 +158,15 @@ export function Home({username}) {
             const ctx = canvas.getContext("2d");
             const { drawing, move_to: moveTo, line_to: lineTo = [], erasing, outsideCanvas, undo, fromWindow } = users[uuid].state;
             if(fromWindow && !outsideCanvas) return;
-            if(!userStroke.current[uuid] || !userStrokes.current[uuid]){
+
+            if(!userStroke.current[uuid]){
                 userStroke.current[uuid]  = [];
                 userStrokes.current[uuid]  = [];
+                userPrevStrokes.current[uuid] = [];
             }
-            if(undo){
-                reDrawCanvas(uuid);
+            if(undo === true || undo === false){
+                reDrawCanvas(undo, uuid);
+                return;
             }
             if(erasing){
                 ctx.lineWidth = 10;
@@ -140,21 +177,23 @@ export function Home({username}) {
                 ctx.globalCompositeOperation = "source-over";
             }
             if(outsideCanvas){
+
+                
                 ctx.lineWidth = 1;
                 ctx.globalCompositeOperation = "source-over";
                 ctx.beginPath();
+                strokeStatusRef.current[uuid] = false;
+                pushFlushUserStroke(uuid, erasing);
                 return;
             }
             if (moveTo) {
                 moveToRef.current[uuid] = moveTo;
+                moveToUndoRedo.current[uuid] = moveTo;
             }
             if (drawing === false) {
-                if(userStroke.current[uuid].length > 0){
-                    userStrokes.current[uuid].push({pointer: userStroke.current[uuid], erase: erasing});
-                    console.log(userStrokes.current[uuid]);
-                    userStroke.current[uuid] = [];
-                }
+                userPrevStrokes.current[uuid] = [];
                 strokeStatusRef.current[uuid] = false;
+                pushFlushUserStroke(uuid, erasing);
                 return;
             }
 
@@ -235,11 +274,13 @@ export function Home({username}) {
                 ctx.lineTo(e.offsetX, e.offsetY);
                 ctx.stroke();
 
- 
+
                 pointerBufferRef.current.push({x: e.offsetX, y: e.offsetY});
                 sendCurrAndBufferThrottleMessage.current({x: e.offsetX, y: e.offsetY});
-                stroke.current.push({x: e.offsetX, y: e.offsetY});
-
+                if(!stroke.current["line_to"]){
+                    stroke.current["line_to"] = [];
+                }
+                stroke.current["line_to"].push({x: e.offsetX, y: e.offsetY});
                 
             }     
 
@@ -247,6 +288,8 @@ export function Home({username}) {
         const handleMouseDown = (e) => {
 
             drawRef.current = true;
+
+            stroke.current["move_to"] = {x : e.offsetX, y : e.offsetY};
 
             if(!modeRef.current){
                 ctx.lineWidth = 1;
@@ -280,15 +323,19 @@ export function Home({username}) {
             drawRef.current = false;
             sendCurrAndBufferThrottleMessage.current.flush();
 
+    
+            if(stroke.current["line_to"].length > 0){
 
-            strokes.current.push({points: [...stroke.current], erase: modeRef.current});
-            if(!modeRef.current){
-                canvas.style.cursor = "crosshair";
+                strokes.current.push({
+                    points: [...stroke.current["line_to"]], 
+                    erase: modeRef.current, 
+                    move_to: stroke.current["move_to"]
+                });
+                stroke.current["line_to"] = [];
             }
-            stroke.current = [];
-
+            
+            canvas.style.cursor = "crosshair";
             prevStrokes.current = [];
-
             sendJsonMessage({
                 state:{
                     mousemove: {
@@ -300,6 +347,10 @@ export function Home({username}) {
                     erasing: modeRef.current
                 },
             });
+
+
+            modeRef.current = false
+            
 
 
         }
@@ -314,14 +365,23 @@ export function Home({username}) {
                     sendCurrAndBufferThrottleMessage.current.flush();
                     drawRef.current = false;
                     isOutsideCanvas.current = true;
+                    if(stroke.current["line_to"]){
+                        if(stroke.current["line_to"].length > 0){
+                            strokes.current.push({points: [...stroke.current["line_to"]], erase: modeRef.current, move_to: stroke.current["move_to"] });
+                            stroke.current["line_to"] = [];
+                        }
+                    }
+
+
                     sendJsonMessage({
                         state: {
                             mousemove: { x: e.clientX, y: e.clientY },
                             fromWindow: true,
-                            outsideCanvas: isOutsideCanvas.current
+                            outsideCanvas: isOutsideCanvas.current,
+                            erasing: modeRef.current
                         }
                     });
-                }else if(!outside){
+                }else if(!outside && isOutsideCanvas.current){
                     isOutsideCanvas.current = false;
                 }
                 if(!drawRef.current){
@@ -338,18 +398,19 @@ export function Home({username}) {
         
         const handleCtrlDown = (e) => {
             if(e.ctrlKey){
-                modeRef.current = true;
                 if(!drawRef.current){
                     canvas.style.cursor = "cell";
+                    modeRef.current = true;
                 }
             }
         } 
         const handleCtrlUp = (e) => {
-            if(e.key === "Control"){
-                modeRef.current = false;
+            if(e.key === "Control"){        
                 if(!drawRef.current){
                     canvas.style.cursor = "crosshair";
+                    modeRef.current = false;
                 }
+
             }  
         } 
 
@@ -393,8 +454,9 @@ export function Home({username}) {
         <h1>Home</h1>
         <p>Welcome {username}</p>
         <p>Hold control to make use of the eraser</p>
-        <button onClick={() => handleDrawing(true)}>⬅️</button>
-        <button onClick={() => handleDrawing(false)}>➡️</button>
+        
+        <button disabled={strokes.current.length === 0} onClick={() => reDrawCanvas(true)}>⬅️</button>
+        <button disabled={prevStrokes.current.length === 0} onClick={() => reDrawCanvas(false)}>➡️</button>
         {lastJsonMessage && (
         <>
             <div style={{ height: 80, width: 480, overflowX: 'auto', gap: 10 }}>
