@@ -6,6 +6,7 @@ import 'dotenv/config';
 import { connectDB } from './config/db.js';
 import express from "express";
 import cors from "cors";
+import Stroke from './models/Stroke.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -22,20 +23,38 @@ app.use(cors());
 app.use(express.json());
 
 app.post("/api/strokes",  async (req, res) => {
-    console.log(req.body);
-    res.status(200).json({message: "response"});
+    const {strokes, color} = req.body;
+    try{
+        await Promise.all(strokes.map((stroke) => {
+            const strokeToBeSaved = new Stroke({
+                color: color,
+                move_to: stroke.move_to,
+                points: stroke.points,
+                erase: stroke.erase
+            });
+            return strokeToBeSaved.save();
+        }));
+        res.status(201).json({message: "Successfully added resource"});
+    }catch(e){
+        console.error("Error in creating strokes", e);
+        res.status(500).json({ message: "Internal server error" });
+    }
 });
 
 app.get("/api/strokes", async (req, res) => {
-    res.status(200).json({message: "response"});
+    try{
+        const strokes = await Stroke.find();
+        res.status(201).json(strokes);
+    }catch(e){
+        console.error("Error in getting strokes", e);
+        res.status(500).json({ message: "Internal server error" });
+    }
 });
 
 
 
 const broadcast = () => {
     const allConnections =  Object.keys(connections);
-    const connectionsLength = allConnections.length
-    users["users_length"] = connectionsLength;
     allConnections.forEach(uuid => {
         const connection = connections[uuid];
         const message = JSON.stringify(users);

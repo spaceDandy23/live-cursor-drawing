@@ -1,18 +1,31 @@
 import mongoose from "mongoose";
 
+const strokeSchema = new mongoose.Schema({
 
-const strokeSchema = mongoose.Schema({
-
-    x:{
-        type: number,
+    color: {
+        type: String,
         required: true
     },
-    y:{
-        type: number,
+
+    move_to: {
+        x: { type: Number, required: true },
+        y: { type: Number, required: true }
+    },
+    points: [
+        {
+        x: { type: Number, required: true },
+        y: { type: Number, required: true }
+        }
+    ],
+    erase: {
+        type: Boolean,
         required: true
     }
+    
+
+
 });
 
+const Stroke = mongoose.model("Stroke", strokeSchema);
 
-
-const Note = mongoose.model("Stroke",strokeSchema)
+export default Stroke;

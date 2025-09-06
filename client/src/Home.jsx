@@ -13,6 +13,10 @@ export function Home({username}) {
     // const colorChange = useRef(0);
     const PEN_WIDTH = 1;
     const ERASER_WIDTH = 10;
+    const STROKES_LEFT = useRef(200);
+    const STROKE_LIMIT = 0;
+
+
     const canvasesRef = useRef({});
     const canvasRef = useRef(null);
     const strokeStatusRef = useRef({});
@@ -23,6 +27,7 @@ export function Home({username}) {
     const modeRef = useRef(false);
     const moveToUndoRedo = useRef({});
     const strokeColor = useRef(getRandomColor());
+    const [saved, setSaved] = useState(false);
 
     const strokes = useRef([]);
     const stroke = useRef({});
@@ -33,7 +38,6 @@ export function Home({username}) {
     const userStrokes = useRef({});
     const userStroke = useRef({});
     const userPrevStrokes = useRef({});
- 
     const isOutsideCanvas = useRef(false);
 
 
@@ -43,7 +47,6 @@ export function Home({username}) {
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
-
     const pushFlushUserStroke = (uuid, erasing) => {
         if(userStroke.current[uuid].length > 0){
             userStrokes.current[uuid].push({points: userStroke.current[uuid], erase: erasing, move_to: moveToUndoRedo.current[uuid]});
@@ -51,7 +54,30 @@ export function Home({username}) {
         }
     }
 
+    const save = async () => {
+        try{
+            const res = await fetch(`http://localhost:8000/api/strokes?`, {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                }, 
+                body: JSON.stringify({ username, strokes: strokes.current, color: strokeColor.current })
+            });
+            if(res.ok){
+                const data = await res.json();
+                console.log(data);
+                strokes.current = [];
+                prevStrokes.current = [];
+                reDrawCanvas();
 
+    
+                setSaved(prev => !prev);
+
+            }
+        }catch(e){
+            console.log(e)
+        }
+    }
     const renderCursors = users => {
 
     
@@ -108,12 +134,21 @@ export function Home({username}) {
             diffStrokes = strokes.current;
             if(undo){
                 if(strokes.current.length > 0){
-                    prevStrokes.current.push(strokes.current.pop());
+                    const strokePopped = strokes.current.pop();
+
+                    if(!strokePopped["erase"]){
+                        STROKES_LEFT.current += strokePopped["points"].length
+                    }
+                    prevStrokes.current.push(strokePopped);
                 }
 
             }else{
                 if(prevStrokes.current.length > 0) {
-                    strokes.current.push(prevStrokes.current.pop());
+                    const strokePopped = prevStrokes.current.pop();
+                    if(!strokePopped["erase"]){
+                        STROKES_LEFT.current -= strokePopped["points"].length
+                    }
+                    strokes.current.push(strokePopped);
                 }
 
             }
@@ -158,8 +193,8 @@ export function Home({username}) {
             if (!canvas) return;
 
             const ctx = canvas.getContext("2d");
-            const { drawing, move_to: moveTo, line_to: lineTo = [], erasing, outsideCanvas, undo, fromWindow, color } = users[uuid].state;
-            if(fromWindow && !outsideCanvas) return;
+            const { drawing, move_to: moveTo, line_to: lineTo = [], erasing, outsideCanvas, undo, color } = users[uuid].state;
+
             if(color){
                 ctx.strokeStyle = color;
             }
@@ -274,25 +309,31 @@ export function Home({username}) {
             
         const handleMouseMove = (e) => {
             if(drawRef.current){
+
+                if(STROKES_LEFT.current === STROKE_LIMIT  && !modeRef.current) return;
+
                 ctx.lineTo(e.offsetX, e.offsetY);
                 ctx.stroke();
-
-
                 pointerBufferRef.current.push({x: e.offsetX, y: e.offsetY});
                 sendCurrAndBufferThrottleMessage.current({x: e.offsetX, y: e.offsetY});
                 if(!stroke.current["line_to"]){
                     stroke.current["line_to"] = [];
                 }
+                if(!modeRef.current){
+                    STROKES_LEFT.current -= 1;
+                }
+
                 stroke.current["line_to"].push({x: e.offsetX, y: e.offsetY});
-                
+
             }     
 
         }
         const handleMouseDown = (e) => {
-
+            if(STROKES_LEFT.current === STROKE_LIMIT && !modeRef.current) return;
             drawRef.current = true;
 
             stroke.current["move_to"] = {x : e.offsetX, y : e.offsetY};
+            
 
             if(!modeRef.current){
                 ctx.lineWidth = PEN_WIDTH;
@@ -324,8 +365,12 @@ export function Home({username}) {
         }
 
         const handleMouseUp = (e) => {
+
+  
+
             drawRef.current = false;
             sendCurrAndBufferThrottleMessage.current.flush();
+
 
     
             if(stroke.current["line_to"].length > 0){
@@ -335,7 +380,10 @@ export function Home({username}) {
                     erase: modeRef.current, 
                     move_to: stroke.current["move_to"]
                 });
+                console.log(strokes.current)
                 stroke.current["line_to"] = [];
+
+
             }
             
             canvas.style.cursor = "crosshair";
@@ -457,19 +505,19 @@ export function Home({username}) {
     }, [lastJsonMessage])
 
 
-    
 
 
     return (
     <>
-
+        
 
         <h1>Home</h1>
         <p>Welcome {username}</p>
         <p>Hold control to make use of the eraser</p>
+        <p>{STROKES_LEFT.current > 0 ? `Strokes left ${STROKES_LEFT.current}`: "Stroke limit reached"}</p>
         <button disabled={strokes.current.length === 0} onClick={() => reDrawCanvas(true)}>⬅️</button>
         <button disabled={prevStrokes.current.length === 0} onClick={() => reDrawCanvas(false)}>➡️</button>
-        
+        <button disabled={strokes.current.length === 0} onClick={() => save()}>save</button>
         {lastJsonMessage && (
         <>
         
@@ -508,10 +556,9 @@ export function Home({username}) {
             }}
             />
         ))}
-         {lastJsonMessage && <AdminCanvas userLeft={lastJsonMessage["users_length"]}/>}
+         {lastJsonMessage && <AdminCanvas saved={saved}/>}
 
        
-
     </>
     );
 }
