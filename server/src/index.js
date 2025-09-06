@@ -3,22 +3,47 @@ import { WebSocketServer } from 'ws';
 import url from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import 'dotenv/config';
+import { connectDB } from './config/db.js';
+import express from "express";
+import cors from "cors";
 
-const server = http.createServer();
+const app = express();
+const server = http.createServer(app);
 const wsServer = new WebSocketServer({server});
 const port = process.env.PORT || 8000;
 
 const connections = {};
 const users = {};
 
+
+
+connectDB();
+app.use(cors());
+app.use(express.json());
+
+app.post("/api/strokes",  async (req, res) => {
+    console.log(req.body);
+    res.status(200).json({message: "response"});
+});
+
+app.get("/api/strokes", async (req, res) => {
+    res.status(200).json({message: "response"});
+});
+
+
+
 const broadcast = () => {
-    Object.keys(connections).forEach(uuid => {
+    const allConnections =  Object.keys(connections);
+    const connectionsLength = allConnections.length
+    users["users_length"] = connectionsLength;
+    allConnections.forEach(uuid => {
         const connection = connections[uuid];
         const message = JSON.stringify(users);
         connection.send(message);
         
         
     });
+
 }
 
 const handleMessage = (bytes, uuid) => {

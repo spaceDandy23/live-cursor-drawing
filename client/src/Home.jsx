@@ -1,17 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useWebSocket from 'react-use-websocket';
 import throttle from 'lodash.throttle';
 import { Cursor } from './components/Cursor';
-
+import { AdminCanvas } from './components/AdminCanvas';
+import { getRandomColor } from './lib/utils.js';
 
 
 
 export function Home({username}) {
 
-
     // const colors = ["red", "yellow"];
     // const colorChange = useRef(0);
-
+    const PEN_WIDTH = 1;
+    const ERASER_WIDTH = 10;
     const canvasesRef = useRef({});
     const canvasRef = useRef(null);
     const strokeStatusRef = useRef({});
@@ -20,7 +21,8 @@ export function Home({username}) {
     const moveToRef = useRef({});
     const batchSigRef = useRef({});
     const modeRef = useRef(false);
-    const moveToUndoRedo = useRef({})
+    const moveToUndoRedo = useRef({});
+    const strokeColor = useRef(getRandomColor());
 
     const strokes = useRef([]);
     const stroke = useRef({});
@@ -34,12 +36,13 @@ export function Home({username}) {
  
     const isOutsideCanvas = useRef(false);
 
-    const WS_URL = import.meta.env.VITE_WS_URL;
-    // const WS_URL = "ws://localhost:8000"
+
+
+    // const WS_URL = import.meta.env.VITE_WS_URL;
+    const WS_URL = "ws://localhost:8000"
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
-
 
     const pushFlushUserStroke = (uuid, erasing) => {
         if(userStroke.current[uuid].length > 0){
@@ -57,8 +60,7 @@ export function Home({username}) {
 
     const rect = canvas.getBoundingClientRect();
 
-        return Object.keys(users).filter(uuid => 
-            users[uuid].username !== username
+        return Object.keys(users).filter(uuid => users[uuid].username !== username
         ).map(uuid => {
 
 
@@ -72,7 +74,7 @@ export function Home({username}) {
                 coorX += rect.left;
                 coorY += rect.top;
             }
-            lastMousePos.current[uuid] = {coorX , coorY};
+            lastMousePos.current[uuid] = {x:coorX , y:coorY};
 
             return <Cursor key={uuid} point={[coorX , coorY]} />;
         })
@@ -90,13 +92,13 @@ export function Home({username}) {
             if(undo){
                 if(userStrokes.current[uuid].length > 0){ 
                     userPrevStrokes.current[uuid].push(userStrokes.current[uuid].pop());
-                    console.log(userPrevStrokes.current[uuid]);
+
                     
                 }
             }else{
                 if(userPrevStrokes.current[uuid].length > 0) {
                     userStrokes.current[uuid].push(userPrevStrokes.current[uuid].pop());
-                    console.log(userStrokes.current[uuid]);
+ 
                 }
 
             }
@@ -120,7 +122,8 @@ export function Home({username}) {
             sendJsonMessage(
                 {state: 
                     {
-                        undo: undo
+                        undo: undo,
+                        fromWindow: true
                     }
                 });
 
@@ -133,7 +136,7 @@ export function Home({username}) {
         diffStrokes.forEach((stroke) => {
             ctx.beginPath();
             ctx.globalCompositeOperation = stroke.erase ? "destination-out" : "source-over";
-            ctx.lineWidth = stroke.erase ? 10 : 1;
+            ctx.lineWidth = stroke.erase ? ERASER_WIDTH : PEN_WIDTH;
             ctx.moveTo(stroke.move_to.x, stroke.move_to.y);
             stroke.points.forEach(({x,y}) => {
                 ctx.lineTo(x,y);
@@ -148,17 +151,18 @@ export function Home({username}) {
 
     const renderDrawing = (users) => {
         
-        Object.keys(users)
-        .filter(uuid => users[uuid].username !== username)
+        Object.keys(users).filter(uuid => users[uuid].username !== username)
         .forEach(uuid => {
             
             const canvas = canvasesRef.current[uuid];
             if (!canvas) return;
 
             const ctx = canvas.getContext("2d");
-            const { drawing, move_to: moveTo, line_to: lineTo = [], erasing, outsideCanvas, undo, fromWindow } = users[uuid].state;
+            const { drawing, move_to: moveTo, line_to: lineTo = [], erasing, outsideCanvas, undo, fromWindow, color } = users[uuid].state;
             if(fromWindow && !outsideCanvas) return;
-
+            if(color){
+                ctx.strokeStyle = color;
+            }
             if(!userStroke.current[uuid]){
                 userStroke.current[uuid]  = [];
                 userStrokes.current[uuid]  = [];
@@ -169,17 +173,17 @@ export function Home({username}) {
                 return;
             }
             if(erasing){
-                ctx.lineWidth = 10;
+                ctx.lineWidth = ERASER_WIDTH;
                 ctx.globalCompositeOperation = "destination-out";
             }
             else if(erasing === false){
-                ctx.lineWidth = 1;
+                ctx.lineWidth = PEN_WIDTH;
                 ctx.globalCompositeOperation = "source-over";
             }
             if(outsideCanvas){
 
                 
-                ctx.lineWidth = 1;
+                ctx.lineWidth = PEN_WIDTH;
                 ctx.globalCompositeOperation = "source-over";
                 ctx.beginPath();
                 strokeStatusRef.current[uuid] = false;
@@ -255,7 +259,6 @@ export function Home({username}) {
 
 
 
-
     useEffect(() => {
 
 
@@ -292,17 +295,17 @@ export function Home({username}) {
             stroke.current["move_to"] = {x : e.offsetX, y : e.offsetY};
 
             if(!modeRef.current){
-                ctx.lineWidth = 1;
+                ctx.lineWidth = PEN_WIDTH;
                 ctx.globalCompositeOperation = "source-over";
             }
             else{
-                ctx.lineWidth = 10;
+                ctx.lineWidth = ERASER_WIDTH;
                 ctx.globalCompositeOperation = "destination-out";
             }
 
             ctx.beginPath();
             ctx.moveTo(e.offsetX, e.offsetY);
-
+            ctx.strokeStyle = strokeColor.current;
 
             sendJsonMessage({
                 state:{
@@ -313,7 +316,8 @@ export function Home({username}) {
                     move_to: {x: e.offsetX, y: e.offsetY},
                     line_to: [],
                     drawing: true,
-                    erasing: modeRef.current
+                    erasing: modeRef.current,
+                    color: strokeColor.current
                 }
             })
 
@@ -414,6 +418,10 @@ export function Home({username}) {
             }  
         } 
 
+
+
+
+
         canvas.addEventListener("mouseup", handleMouseUp);
         canvas.addEventListener("mousedown", handleMouseDown);
         canvas.addEventListener("mousemove", handleMouseMove);
@@ -421,15 +429,16 @@ export function Home({username}) {
 
 
 
-        window.addEventListener("pointermove", handleWindowMouseMove);
+        window.addEventListener("mousemove", handleWindowMouseMove);
         window.addEventListener("keydown", handleCtrlDown);
         window.addEventListener("keyup", handleCtrlUp);
+        
+
 
         return () => {
             canvas.removeEventListener("mouseup", handleMouseUp);
             canvas.removeEventListener("mousedown", handleMouseDown);
             canvas.removeEventListener("mousemove", handleMouseMove);
-            
             window.removeEventListener("mousemove", handleWindowMouseMove);
             window.removeEventListener("keydown", handleCtrlDown);
             window.removeEventListener("keyup", handleCtrlUp);
@@ -448,17 +457,22 @@ export function Home({username}) {
     }, [lastJsonMessage])
 
 
+    
+
 
     return (
     <>
+
+
         <h1>Home</h1>
         <p>Welcome {username}</p>
         <p>Hold control to make use of the eraser</p>
-        
         <button disabled={strokes.current.length === 0} onClick={() => reDrawCanvas(true)}>⬅️</button>
         <button disabled={prevStrokes.current.length === 0} onClick={() => reDrawCanvas(false)}>➡️</button>
+        
         {lastJsonMessage && (
         <>
+        
             <div style={{ height: 80, width: 480, overflowX: 'auto', gap: 10 }}>
             {Object.keys(lastJsonMessage).map(uuid => (
                 <li key={uuid}>
@@ -469,7 +483,6 @@ export function Home({username}) {
             {renderCursors(lastJsonMessage)}
         </>
         )}
-
         <canvas
         ref={canvasRef}
         height={480}
@@ -495,6 +508,9 @@ export function Home({username}) {
             }}
             />
         ))}
+         {lastJsonMessage && <AdminCanvas userLeft={lastJsonMessage["users_length"]}/>}
+
+       
 
     </>
     );

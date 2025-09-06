@@ -3,13 +3,16 @@ import { useState } from "react";
 
 export const Login = ({onSubmit}) => {
 
-    const [username, setUsername] = useState('');
 
+    const [username, setUsername] = useState('');
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if(import.meta.env.VITE_ADMIN_KEY === username){
+            onSubmit(import.meta.env.VITE_ADMIN_KEY);
+            return;
+        }
         onSubmit(username);
-
-
     }
 
     return (
