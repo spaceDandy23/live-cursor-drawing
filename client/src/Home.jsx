@@ -13,9 +13,10 @@ export function Home({username}) {
     // const colorChange = useRef(0);
     const PEN_WIDTH = 1;
     const ERASER_WIDTH = 10;
-    const STROKES_LEFT = useRef(200);
+    const STROKES_LEFT = useRef(1500);
     const STROKE_LIMIT = 0;
-
+    const WIDTH = document.documentElement.clientWidth - (window.innerWidth - document.documentElement.clientWidth);
+    const HEIGHT = 1080;
 
     const canvasesRef = useRef({});
     const canvasRef = useRef(null);
@@ -44,8 +45,10 @@ export function Home({username}) {
 
 
 
-    // const WS_URL = import.meta.env.VITE_WS_URL;
-    const WS_URL = "ws://localhost:8000"
+
+
+    const WS_URL = import.meta.env.VITE_WS_URL;
+    // const WS_URL = "ws://localhost:8000"
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
@@ -72,8 +75,6 @@ export function Home({username}) {
                 return 
             }
 
-            const data = await res.json();
-            console.log(data);
             strokes.current = [];
             prevStrokes.current = [];
             reDrawCanvas();
@@ -83,6 +84,9 @@ export function Home({username}) {
                     fromWindow: true
                 }
             });
+
+            alert("saved to database");
+
             setSaved(prev => !prev);
   
         }catch(e){
@@ -397,7 +401,6 @@ export function Home({username}) {
                     erase: modeRef.current, 
                     move_to: stroke.current["move_to"]
                 });
-                console.log(strokes.current)
                 stroke.current["line_to"] = [];
 
 
@@ -533,14 +536,14 @@ export function Home({username}) {
         <p>Hold control to make use of the eraser</p>
         <p>{STROKES_LEFT.current > 0 ? `Strokes left ${STROKES_LEFT.current}`: "Stroke limit reached"}</p>
 
-        {storageFullErr ? <p>database is unfortunately full, ur strokes wont be saved </p> : ''}
+        {storageFullErr && <p>database is unfortunately full, ur strokes wont be saved </p>}
         <button disabled={strokes.current.length === 0} onClick={() => reDrawCanvas(true)}>⬅️</button>
         <button disabled={prevStrokes.current.length === 0} onClick={() => reDrawCanvas(false)}>➡️</button>
         <button disabled={strokes.current.length === 0} onClick={() => save()}>save</button>
         {lastJsonMessage && (
         <>
         
-            <div style={{ height: 80, width: 480, overflowX: 'auto', gap: 10 }}>
+            <div style={{ height: 80, width: WIDTH, overflowX: 'auto', gap: 10 }}>
             {Object.keys(lastJsonMessage).map(uuid => (
                 <li key={uuid}>
                 {lastJsonMessage[uuid].username} joined
@@ -552,8 +555,8 @@ export function Home({username}) {
         )}
         <canvas
         ref={canvasRef}
-        height={480}
-        width={480}
+        height={HEIGHT}
+        width={WIDTH}
         style={{ position: 'absolute', border: '1px solid black', cursor: 'crosshair', zIndex: 1 }}
         />
         {lastJsonMessage && Object.keys(lastJsonMessage)
@@ -565,8 +568,8 @@ export function Home({username}) {
                 if (el) canvasesRef.current[uuid] = el;
                 else delete canvasesRef.current[uuid]; 
             }}
-            height={480}
-            width={480}
+            height={HEIGHT}
+            width={WIDTH}
             style={{
                 position: 'absolute',
                 border: '1px solid black',
@@ -575,7 +578,7 @@ export function Home({username}) {
             }}
             />
         ))}
-         {lastJsonMessage && <AdminCanvas userSaved = {userSaved} saved={saved}/>}
+         {lastJsonMessage && <AdminCanvas height={HEIGHT} width={WIDTH} userSaved={userSaved} saved={saved}/>}
 
        
     </>

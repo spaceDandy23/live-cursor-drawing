@@ -1,6 +1,6 @@
 import { useEffect, useRef, memo } from "react"
 
-export const AdminCanvas = memo(({saved, userSaved}) => {
+export const AdminCanvas = memo(({saved, userSaved, height, width}) => {
 
 
 
@@ -38,7 +38,6 @@ export const AdminCanvas = memo(({saved, userSaved}) => {
             try {
                 const res = await fetch(`http://localhost:8000/api/strokes`);
                 const strokes = await res.json();
-                console.log(strokes);
                 renderGlobalCanvas(strokes);
             
             } catch (e) {
@@ -52,8 +51,8 @@ export const AdminCanvas = memo(({saved, userSaved}) => {
     return (
         <canvas
         ref={canvasRef}
-        height={480}
-        width={500}
+        height={height}
+        width={width}
         style={{ position: 'absolute', border: '1px solid red', zIndex: -1 }}
         
         />
