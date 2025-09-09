@@ -12,7 +12,7 @@ import DigestFetch from "digest-fetch";
 const app = express();
 const server = http.createServer(app);
 const wsServer = new WebSocketServer({server});
-const port = 8001;
+const port = process.env.PORT || 8000;
 
 const PUBLIC_KEY = process.env.ATLAS_PUBLIC_KEY;
 const PRIVATE_KEY = process.env.ATLAS_PRIVATE_KEY;
