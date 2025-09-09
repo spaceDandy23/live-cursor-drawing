@@ -40,6 +40,7 @@ export function Home({username}) {
     const userStroke = useRef({});
     const userPrevStrokes = useRef({});
     const isOutsideCanvas = useRef(false);
+    const [storageFullErr, setStorageFullErr] = useState(false);
 
 
 
@@ -64,26 +65,26 @@ export function Home({username}) {
                 }, 
                 body: JSON.stringify({ username, strokes: strokes.current, color: strokeColor.current })
             });
-            if(res.ok){
-                const data = await res.json();
-                console.log(data);
-                strokes.current = [];
-                prevStrokes.current = [];
-                reDrawCanvas();
-
-
-                
-                sendJsonMessage({
-                    state:{
-                        saved: true,
-                        fromWindow: true
-                    }
-                });
-    
-                setSaved(prev => !prev);
-
-
+            if(!res.ok){
+                const errData = await res.json();
+                console.log(errData.message);
+                setStorageFullErr(true);
+                return 
             }
+
+            const data = await res.json();
+            console.log(data);
+            strokes.current = [];
+            prevStrokes.current = [];
+            reDrawCanvas();
+            sendJsonMessage({
+                state:{
+                    saved: true,
+                    fromWindow: true
+                }
+            });
+            setSaved(prev => !prev);
+  
         }catch(e){
             console.log(e)
         }
@@ -531,6 +532,8 @@ export function Home({username}) {
         <p>Welcome {username}</p>
         <p>Hold control to make use of the eraser</p>
         <p>{STROKES_LEFT.current > 0 ? `Strokes left ${STROKES_LEFT.current}`: "Stroke limit reached"}</p>
+
+        {storageFullErr ? <p>database is unfortunately full, ur strokes wont be saved </p> : ''}
         <button disabled={strokes.current.length === 0} onClick={() => reDrawCanvas(true)}>⬅️</button>
         <button disabled={prevStrokes.current.length === 0} onClick={() => reDrawCanvas(false)}>➡️</button>
         <button disabled={strokes.current.length === 0} onClick={() => save()}>save</button>

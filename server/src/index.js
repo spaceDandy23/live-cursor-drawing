@@ -7,16 +7,25 @@ import { connectDB } from './config/db.js';
 import express from "express";
 import cors from "cors";
 import Stroke from './models/Stroke.js';
+import DigestFetch from "digest-fetch";
 
 const app = express();
 const server = http.createServer(app);
 const wsServer = new WebSocketServer({server});
-const port = process.env.PORT || 8000;
+const port = process.env.PORT;
+
+const PUBLIC_KEY = process.env.ATLAS_PUBLIC_KEY;
+const PRIVATE_KEY = process.env.ATLAS_PRIVATE_KEY;
+const PROJECT_ID = process.env.ATLAS_PROJECT_ID;
+const CLUSTER_NAME = process.env.ATLAS_CLUSTER_NAME;  
+const HOSTNAME = process.env.ATLAS_HOST_NAME;    
+const ATLAS_PORT = process.env.ATLAS_PORT;  
+const DISK_NAME = process.env.ATLAS_DISK_NAME;  
 
 const connections = {};
 const users = {};
 
-
+const client = new DigestFetch(PUBLIC_KEY,PRIVATE_KEY)
 
 connectDB();
 app.use(cors());
@@ -37,13 +46,17 @@ app.post("/api/strokes",  async (req, res) => {
         res.status(201).json({message: "Successfully added resource"});
     }catch(e){
         console.error("Error in creating strokes", e);
+        if(e.code === 28){
+            return res.status(507).json({ message: "Database storage is full" });
+        }
         res.status(500).json({ message: "Internal server error" });
-    }
+    }   
 });
 
 app.get("/api/strokes", async (req, res) => {
     try{
         const strokes = await Stroke.find();
+
         res.status(201).json(strokes);
     }catch(e){
         console.error("Error in getting strokes", e);
