@@ -1,16 +1,10 @@
 import { useEffect, useRef, memo } from "react"
 
-export const AdminCanvas = memo(({saved}) => {
-
-
-
-
+export const AdminCanvas = memo(({saved, userSaved}) => {
 
 
 
     const canvasRef = useRef();
-
-
     useEffect(() => {
 
 
@@ -53,7 +47,7 @@ export const AdminCanvas = memo(({saved}) => {
 
         }
         fetchData();
-    },[saved]) 
+    },[saved, Object.values(userSaved).join(",")]);
 
     return (
         <canvas

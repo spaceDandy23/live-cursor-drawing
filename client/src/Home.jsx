@@ -28,6 +28,7 @@ export function Home({username}) {
     const moveToUndoRedo = useRef({});
     const strokeColor = useRef(getRandomColor());
     const [saved, setSaved] = useState(false);
+    const [userSaved, setUserSaved] = useState({});
 
     const strokes = useRef([]);
     const stroke = useRef({});
@@ -70,8 +71,17 @@ export function Home({username}) {
                 prevStrokes.current = [];
                 reDrawCanvas();
 
+
+                
+                sendJsonMessage({
+                    state:{
+                        saved: true,
+                        fromWindow: true
+                    }
+                });
     
                 setSaved(prev => !prev);
+
 
             }
         }catch(e){
@@ -167,7 +177,7 @@ export function Home({username}) {
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+        if(diffStrokes.length <= 0) return;
         diffStrokes.forEach((stroke) => {
             ctx.beginPath();
             ctx.globalCompositeOperation = stroke.erase ? "destination-out" : "source-over";
@@ -193,8 +203,14 @@ export function Home({username}) {
             if (!canvas) return;
 
             const ctx = canvas.getContext("2d");
-            const { drawing, move_to: moveTo, line_to: lineTo = [], erasing, outsideCanvas, undo, color } = users[uuid].state;
+            const { drawing, move_to: moveTo, line_to: lineTo = [], erasing, outsideCanvas, undo, color,saved } = users[uuid].state;
+            if(saved){
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+           
+                setUserSaved(prev => ({...prev, [uuid]: !prev[uuid]}))
+   
 
+            }
             if(color){
                 ctx.strokeStyle = color;
             }
@@ -556,7 +572,7 @@ export function Home({username}) {
             }}
             />
         ))}
-         {lastJsonMessage && <AdminCanvas saved={saved}/>}
+         {lastJsonMessage && <AdminCanvas userSaved = {userSaved} saved={saved}/>}
 
        
     </>
