@@ -38,7 +38,7 @@ export const AdminCanvas = memo(({saved, userSaved, height, width}) => {
             try {
                 const res = await fetch(`${HTTP_URL}/api/strokes`);
                 const strokes = await res.json();
- 
+                console.log(strokes);
                 renderGlobalCanvas(strokes);
             
             } catch (e) {
