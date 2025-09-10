@@ -30,6 +30,7 @@ export function Home({username}) {
     const strokeColor = useRef(getRandomColor());
     const [saved, setSaved] = useState(false);
     const [userSaved, setUserSaved] = useState({});
+    const scrollRef = useRef({x:0, y:0});
 
     const strokes = useRef([]);
     const stroke = useRef({});
@@ -112,12 +113,12 @@ export function Home({username}) {
             let coorY = y;
 
             if(!user.state.fromWindow){
-                coorX += rect.left;
-                coorY += rect.top;
+                coorX += rect.left + (scrollRef.current["x"]);
+                coorY += rect.top + (scrollRef.current["y"]);
             }
             lastMousePos.current[uuid] = {x:coorX , y:coorY};
 
-            return <Cursor key={uuid} point={[coorX , coorY]} />;
+            return <Cursor key={uuid} point={[coorX  , coorY ]} />;
         })
     }
 
@@ -336,7 +337,7 @@ export function Home({username}) {
                 ctx.lineTo(e.offsetX, e.offsetY);
                 ctx.stroke();
                 pointerBufferRef.current.push({x: e.offsetX, y: e.offsetY});
-                sendCurrAndBufferThrottleMessage.current({x: e.offsetX, y: e.offsetY});
+                sendCurrAndBufferThrottleMessage.current({x: e.offsetX, y: e.offsetY });
                 if(!stroke.current["line_to"]){
                     stroke.current["line_to"] = [];
                 }
@@ -447,7 +448,7 @@ export function Home({username}) {
 
                     sendJsonMessage({
                         state: {
-                            mousemove: { x: e.clientX, y: e.clientY },
+                            mousemove: { x: e.clientX + (scrollRef.current["x"]), y: e.clientY + (scrollRef.current["y"])},
                             fromWindow: true,
                             outsideCanvas: isOutsideCanvas.current,
                             erasing: modeRef.current
@@ -459,10 +460,12 @@ export function Home({username}) {
                 if(!drawRef.current){
                     sendThrottleJSONMessage.current({
                         state: {
-                            mousemove: { x: e.clientX, y: e.clientY },
+                            mousemove: { x: e.clientX + (scrollRef.current["x"]), y: e.clientY + (scrollRef.current["y"])},
                             fromWindow: true,
                         }
                     });
+
+ 
                 }
             
         }
@@ -486,7 +489,12 @@ export function Home({username}) {
             }  
         } 
 
+        const handleScroll = () => {
+            scrollRef.current["x"] = window.scrollX;
+            scrollRef.current["y"] = window.scrollY;
 
+            console.log(scrollRef.current);
+        }
 
 
 
@@ -500,7 +508,7 @@ export function Home({username}) {
         window.addEventListener("mousemove", handleWindowMouseMove);
         window.addEventListener("keydown", handleCtrlDown);
         window.addEventListener("keyup", handleCtrlUp);
-        
+        window.addEventListener("scroll", handleScroll);
 
 
         return () => {
@@ -510,7 +518,7 @@ export function Home({username}) {
             window.removeEventListener("mousemove", handleWindowMouseMove);
             window.removeEventListener("keydown", handleCtrlDown);
             window.removeEventListener("keyup", handleCtrlUp);
-
+            window.removeEventListener("scroll", handleScroll);
 
         }
 
