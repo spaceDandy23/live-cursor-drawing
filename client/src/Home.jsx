@@ -61,7 +61,7 @@ export function Home({username}) {
 
     const save = async () => {
         try{
-            const res = await fetch(`http://localhost:8000/api/strokes?`, {
+            const res = await fetch(`${WS_URL}/api/strokes?`, {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json'
