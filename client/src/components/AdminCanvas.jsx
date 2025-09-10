@@ -2,7 +2,7 @@ import { useEffect, useRef, memo } from "react"
 
 export const AdminCanvas = memo(({saved, userSaved, height, width}) => {
 
-    const WS_URL = import.meta.env.VITE_WS_URL;
+    const HTTP_URL = import.meta.env.VITE_HTTP_URL;
 
     const canvasRef = useRef();
     useEffect(() => {
@@ -36,8 +36,9 @@ export const AdminCanvas = memo(({saved, userSaved, height, width}) => {
         }
 
             try {
-                const res = await fetch(`${WS_URL}/api/strokes`);
+                const res = await fetch(`${HTTP_URL}/api/strokes`);
                 const strokes = await res.json();
+ 
                 renderGlobalCanvas(strokes);
             
             } catch (e) {

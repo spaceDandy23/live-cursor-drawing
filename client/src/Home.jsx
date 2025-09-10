@@ -48,7 +48,7 @@ export function Home({username}) {
 
 
     const WS_URL = import.meta.env.VITE_WS_URL;
-    // const WS_URL = "ws://localhost:8000"
+    const HTTP_URL = import.meta.env.VITE_HTTP_URL;
     const {sendJsonMessage, lastJsonMessage} = useWebSocket(WS_URL, {
         queryParams: {username}
     });
@@ -61,7 +61,7 @@ export function Home({username}) {
 
     const save = async () => {
         try{
-            const res = await fetch(`${WS_URL}/api/strokes?`, {
+            const res = await fetch(`${HTTP_URL}/api/strokes?`, {
                 method: "POST",
                 headers: {
                     'Content-Type': 'application/json'
