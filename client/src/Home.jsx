@@ -15,7 +15,7 @@ export function Home({username}) {
     const ERASER_WIDTH = 10;
     const STROKES_LEFT = useRef(1500);
     const STROKE_LIMIT = 0;
-    const WIDTH = document.documentElement.clientWidth - (window.innerWidth - document.documentElement.clientWidth);
+    const WIDTH = 1920;
     const HEIGHT = 1080;
 
     const canvasesRef = useRef({});

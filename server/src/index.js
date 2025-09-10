@@ -64,6 +64,18 @@ app.get("/api/strokes", async (req, res) => {
     }
 });
 
+app.post("/api/login", async (req, res) => {
+    const {username} = req.body;
+
+    let userKeys = Object.keys(users);
+    for(let x = 0; x < userKeys.length; x++){
+        if(users[userKeys[x]]["username"] === username){
+            return res.status(400).json({message : "username already taken"});
+        }
+    }
+    res.status(201).json({success: "username made"});
+})  
+
 
 
 const broadcast = () => {
@@ -104,6 +116,7 @@ wsServer.on("connection", (connection, request) => {
    const { username } = url.parse(request.url, true).query;
    const id = uuidv4();
    console.log(`Hello ${username} ur uuid is ${id}`);
+
 
     connections[id] = connection;
     users[id] = {
