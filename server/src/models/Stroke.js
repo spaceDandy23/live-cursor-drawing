@@ -20,7 +20,9 @@ const strokeSchema = new mongoose.Schema({
     erase: {
         type: Boolean,
         required: true
-    }
+    },
+    // Optional so strokes saved before reconnect catch-up remain readable.
+    clientStrokeId: { type: String }
     
 
 

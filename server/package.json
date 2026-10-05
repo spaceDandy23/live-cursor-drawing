@@ -4,7 +4,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
+    "smoke:realtime": "node scripts/realtime-smoke.js",
     "start": "node src/index.js"
   },
   "keywords": [],
@@ -13,11 +14,9 @@
   "description": "",
   "dependencies": {
     "cors": "^2.8.5",
-    "digest-fetch": "^3.1.1",
     "dotenv": "^17.2.1",
     "express": "^4.21.2",
     "mongoose": "^8.18.0",
-    "node-fetch": "^3.3.2",
     "uuid": "^11.1.0",
     "ws": "^8.18.3"
   }

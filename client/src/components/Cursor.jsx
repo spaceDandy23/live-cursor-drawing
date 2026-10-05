@@ -1,33 +1,19 @@
-import * as React from "react"
-import { usePerfectCursor } from "../hooks/useCursor"
-
-export function Cursor({ userId, point }) {
-  const rCursor = React.useRef(null)
-
-  const animateCursor = React.useCallback(point => {
-    const elm = rCursor.current
-    if (!elm) return
-    elm.style.setProperty(
-      "transform",
-      `translate(${point[0]}px, ${point[1]}px)`
-    )
-  }, [])
-
-  const onPointMove = usePerfectCursor(animateCursor)
-
-  React.useLayoutEffect(() => onPointMove(point), [onPointMove, point])
-
+export function Cursor({ cursorRef }) {
   return (
     <svg
-      ref={rCursor}
+      ref={cursorRef}
       style={{
         position: "absolute",
-        top: -15,
-        left: -15,
+        top: -8,
+        left: -12,
         width: 35,
         height: 35,
+        zIndex: 3,
+        visibility: "hidden",
+        pointerEvents: "none",
       }}
       xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
       viewBox="0 0 35 35"
       fill="none"
       fillRule="evenodd"
@@ -40,7 +26,7 @@ export function Cursor({ userId, point }) {
         <path d="m12 24.4219v-16.015l11.591 11.619h-6.781l-.411.124z" />
         <path d="m21.0845 25.0962-3.605 1.535-4.682-11.089 3.686-1.553z" />
       </g>
-      <g fill={"red"}>
+      <g fill="#1c1c1c">
         <path d="m19.751 24.4155-1.844.774-3.1-7.374 1.841-.775z" />
         <path d="m13 10.814v11.188l2.969-2.866.428-.139h4.768z" />
       </g>

@@ -9,9 +9,7 @@
     "start": "HOST=0.0.0.0 serve -s dist -l $PORT"
   },
   "dependencies": {
-    "dotenv": "^17.2.1",
     "lodash.throttle": "^4.1.1",
-    "perfect-cursors": "^1.0.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-use-websocket": "^4.13.0"
